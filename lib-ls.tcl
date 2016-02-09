@@ -34,5 +34,17 @@ proc ls_get_phy {iface} {
 }
 
 
+;# check whether iface exist in ls (local system)
+;# iface - iface name
+;# return 0 - does not exist, 1 - iface exist
+proc ls_check_iface_exist {iface} {
+	set list_iface [ls_get_ifaces]
+	foreach ifc $list_iface {
+		if {[string match "$iface" $ifc]} {
+			return 1
+		}
+	}
+	return 0
+}
 
 
