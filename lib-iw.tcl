@@ -38,3 +38,44 @@ proc iw_get_info {str} {
 	}
 	return $iw_info
 }
+
+
+;# iw wlan1 link
+;#Connected to 08:bd:43:9d:30:10 (on wlan1)
+;#        SSID: SH2.5.0
+;#        freq: 5180
+;#        RX: 980 bytes (10 packets)
+;#        TX: 490 bytes (4 packets)
+;#        signal: -45 dBm
+;#        tx bitrate: 6.0 MBit/s
+;#
+;#        bss flags:      short-slot-time
+;#        dtim period:    1
+;#        beacon int:     300
+proc iw_get_link {str} {
+	set iw_link [dict create]
+	set lines [split $str "\n"]
+	foreach line $lines {
+		set line [string trim $line " \t\n\r"]
+		if {[string match "Connected to *" $line] == 1} {
+			dict set iw_link apmac [lindex [split $line] 2]
+		}
+		if {[string match "SSID:*" $line] == 1} {
+			dict set iw_link ssid [lindex [split $line] 1]
+		}
+
+		if {[string match "freq:*" $line] == 1} {
+			dict set iw_link freq [lindex [split $line] 1]
+		}
+
+		if {[string match "signal:*" $line] == 1} {
+			dict set iw_link signal "[lindex [split $line] 1] [lindex [split $line] 2]"
+		}
+
+		if {[string match "tx bitrate:*" $line] == 1} {
+			dict set iw_link txrate "[lindex [split $line] 2] [lindex [split $line] 3]"
+		}
+	}
+	return $iw_link
+}
+

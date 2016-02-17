@@ -111,10 +111,28 @@ proc ns_check_iface_exist {ns_fd iface} {
 	return 0
 }
 
+;# move phy interface from root ns to netns
+;# phy - phynumber of interface
+;# ns_pid - ID of process running in netns
 proc ns_move_iface {phy ns_pid} {
 	return [exec iw phy $phy set netns $ns_pid] 
 }
 
+;# move phy interface back to root net ns
+;# ns_fd - descriptor to ns shell pipe
+;# phy - phynumber of interface
+proc ns_remove_iface {ns_fd phy} {
+	set cmd "iw phy $phy set netns 1"
+	return [ns_exec $ns_fd $cmd]
+}
+
+;# get phy number of iface in net ns
+;# ns_fd - descriptor to ns shell pipe
+;# iface - iface name
+proc ns_get_phy {ns_fd iface} {
+	set index [ns_exec $ns_fd "cat /sys/class/net/$iface/phy80211/index"]
+	return "phy$index"
+}
 
 proc ns_find_pid {ns_fd cmd} {
 	set proc_id 0
