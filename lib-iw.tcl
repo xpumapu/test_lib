@@ -34,6 +34,7 @@ proc iw_get_info {str} {
 			set idx [expr [string first "width: " $line] + [string length "width: "]]
 			set chanwidth [string range $line $idx [expr $idx + 1]]
 			dict set iw_info chanwidth $chanwidth
+			dict set iw_info freq [lindex [split [lindex [split $line "("] 1]] 0]
 		}
 	}
 	return $iw_info
@@ -78,4 +79,66 @@ proc iw_get_link {str} {
 	}
 	return $iw_link
 }
+
+
+;#Survey data from wlan0
+;#        frequency:                      2467 MHz
+;#        noise:                          -91 dBm
+;#        channel active time:            106 ms
+;#        channel busy time:              16 ms
+;#        channel receive time:           14 ms
+;#        channel transmit time:          0 ms
+;#Survey data from wlan0
+;#        frequency:                      2472 MHz [in use]
+;#        noise:                          -95 dBm
+;#        channel active time:            572304 ms
+;#        channel busy time:              118588 ms
+;#        channel receive time:           25767 ms
+;#        channel transmit time:          10 ms
+
+proc iw_get_survey {str} {
+	set iw_survey [dict create]
+	set lines [split $str "\n\r"]
+	set freq 0
+	foreach line $lines {
+		set line [string trim $line " \t\n\r"]
+		set part [string trim [lindex [split $line ":"] 1] " \t\n\r"]
+		if {[string match "Survey data from *" $line] == 1} {
+			continue
+		} elseif {[string match "frequency:*" $line] == 1} {
+			set freq [lindex [split $part] 0]
+		} elseif {[string match "noise:*" $line] == 1} {
+			dict set iw_survey $freq noise [lindex [split $part] 0]
+		} elseif {[string match "channel active time:*" $line] == 1} {
+			dict set iw_survey $freq activ_time [lindex [split $part] 0]
+		} elseif {[string match "channel busy time:*" $line] == 1} {
+			dict set iw_survey $freq busy_time [lindex [split $part] 0]
+		} elseif {[string match "channel receive time:*" $line] == 1} {
+			dict set iw_survey $freq rx_time [lindex [split $part] 0]
+		} elseif {[string match "channel transmit time:*" $line] == 1} {
+			dict set iw_survey $freq tx_time [lindex [split $part] 0]
+		}
+	}
+	return $iw_survey
+}
+
+proc iw_calc_busy {freq survey1 survey2} {
+	set sbusy [dict create]
+	set busy1 [dict get $survey1 $freq busy_time]
+	set activ1 [dict get $survey1 $freq activ_time]
+	set tx1 [dict get $survey1 $freq tx_time]
+
+	set busy2 [dict get $survey2 $freq busy_time]
+	set activ2 [dict get $survey2 $freq activ_time]
+	set tx2 [dict get $survey2 $freq tx_time]
+	set tx [expr $tx2 - $tx1]
+	set active [expr $activ2 - $activ1]
+	set a [expr [expr $busy2 - $busy1] - $tx]
+	set b [expr $active - $tx]
+	set by [format %#.2f [expr $a/[format "%f" $b] * 100]]
+	dict set sbusy busy $by
+	dict set sbusy active $active
+	return $sbusy
+}
+
 

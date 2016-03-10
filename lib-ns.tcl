@@ -134,10 +134,35 @@ proc ns_get_phy {ns_fd iface} {
 	return "phy$index"
 }
 
+proc ns_get_iface_opstate {ns_fd iface} {
+	set opstate [ns_exec $ns_fd "cat /sys/class/net/$iface/operstate"]
+	return $opstate
+}
+
+proc ns_get_ip {ns_fd iface} {
+	set cmd_out [ns_exec $ns_fd "ip addr show dev $iface scope global"]
+	foreach line [split $cmd_out "\n"] {
+		set line [string trim $line]
+		if {[string match "inet *" $line] == 1} {
+			set ip_addr [lindex [split $line] 1]
+			set ip_addr [string range $ip_addr 0 [expr [string first "/" $ip_addr] - 1]]
+			return $ip_addr
+		}
+	}
+	return -1
+}
+
+;# configure ns iface
+;# ns_fd - descriptor to ns shell pipe
+;# iface - iface name
+;# op - operation: up/down
+proc ns_ifconfig {ns_fd iface op} {
+	return [ns_exec $ns_fd "ip link set $iface $op"]
+}
+
 proc ns_find_pid {ns_fd cmd} {
 	set proc_id 0
 	set output [ns_exec $ns_fd "ps -eo pid,args"]
-	puts "cmd $cmd \noutput $output"
 	set record [split $output "\n"]
 	for {set idx 0} { $idx < [llength $record]} {incr idx} {
 		set line [lindex $record $idx]

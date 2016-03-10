@@ -805,7 +805,7 @@ proc get_sta_info {spawnid capture_file} {
 	foreach {sa fn} $prob_req {
 		dict set sta_list $sa fn $fn
 	}
-	
+
 	dict for {sa info} $sta_list {
 		set filter "frame.number==[dict get $sta_list $sa fn]"
 		set fields "radiotap.datarate radiotap.channel.freq radiotap.dbm_antsignal "
