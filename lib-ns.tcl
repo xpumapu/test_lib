@@ -175,7 +175,19 @@ proc ns_find_pid {ns_fd cmd} {
 	return $proc_id
 }
 
+;# get net ns pointer
+;# returns netns_p type
+;# (name, ns_fd)
 
+proc ns_get_netns_p {} {
+	set netns_p [dict create]
+	set l_ns [split [ns_list] "\n"]
+	foreach ns $l_ns {
+		set ns_fd [ns_open_shell $ns]
+		dict set netns_p $ns $ns_fd
+	}
+	return $netns_p
+}
 
 
 

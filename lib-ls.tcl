@@ -47,4 +47,43 @@ proc ls_check_iface_exist {iface} {
 	return 0
 }
 
+;# check whether iface is loopback
+;# iface - iface name
+;# return 0 - no lo iface, 1 - lo iface
+
+proc ls_is_iface_lo {iface} {
+	set str [exec ip link show $iface]
+	if {[string match "*link/loopback*" $str] == 1} {
+		return 1
+	}
+	return 0
+}
+
+;# check whether iface is tuntap
+;# iface - iface name
+;# return 0 - no tuntap iface, 1 - tuntap iface
+proc ls_is_iface_tuntap {iface} {
+	if {[file exists /sys/class/net/$iface/tun_flags] == 1} {
+		return 1
+	}
+	return 0
+}
+
+;# gets iface type
+;# iface - iface name
+;# return iface type: bridge, wlan, loopback, tuntap, ethernet
+proc ls_get_iface_type {iface} {
+	if {[file exist /sys/class/net/$iface/bridge] == 1} {
+		set type bridge
+	} elseif {[file exist /sys/class/net/$iface/phy80211] == 1} {
+		set type wlan
+	} elseif {[ls_is_iface_lo $iface] == 1} {
+		set type loopback
+	} elseif {[ls_is_iface_tuntap $iface] == 1} {
+		set type tuntap
+	} else {
+		set type ethernet
+	}
+	return $type
+}
 
